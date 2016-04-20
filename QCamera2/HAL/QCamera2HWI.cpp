@@ -2605,7 +2605,8 @@ QCameraMemory *QCamera2HardwareInterface::allocateStreamBuf(
                     grallocMemory->setWindowInfo(mPreviewWindow,
                             dim.width,dim.height, stride, scanline,
                             mParameters.getPreviewHalPixelFormat(),
-                            maxFPS, usage);
+                            maxFPS, usage,
+                            isMonoCamera() ? CAM_FORMAT_Y_ONLY : 0);
                     pthread_mutex_lock(&mGrallocLock);
                     if (bufferCnt > CAMERA_INITIAL_MAPPABLE_PREVIEW_BUFFERS) {
                         mEnqueuedBuffers = (bufferCnt -
@@ -2847,6 +2848,13 @@ QCameraHeapMemory *QCamera2HardwareInterface::allocateStreamInfoBuf(
     memset(streamInfo, 0, sizeof(cam_stream_info_t));
     streamInfo->stream_type = stream_type;
     rc = mParameters.getStreamFormat(stream_type, streamInfo->fmt);
+    if (isMonoCamera() && stream_type == CAM_STREAM_TYPE_PREVIEW) {
+        // Display does not have support for Y ONLY.
+        // For Mono camera, stream format info for backend will be updated as Y ONLY
+        // Display will be updated as YCbCr, and CbCr data will be
+        // initialized to 128 to get the grey scale image.
+        streamInfo->fmt = CAM_FORMAT_Y_ONLY;
+    }
     rc = mParameters.getStreamDimension(stream_type, streamInfo->dim);
     rc = mParameters.getStreamRotation(stream_type, streamInfo->pp_config, streamInfo->dim);
     streamInfo->num_bufs = getBufNumRequired(stream_type);
@@ -2972,9 +2980,6 @@ QCameraHeapMemory *QCamera2HardwareInterface::allocateStreamInfoBuf(
             streamInfo->pp_config.feature_mask |= CAM_QCOM_FEATURE_SCALE;
     }
 
-    if (getSensorType() == CAM_SENSOR_Y) {
-        streamInfo->pp_config.feature_mask = 0;
-    }
     CDBG_HIGH("%s: allocateStreamInfoBuf: stream type: %d, pp_mask: 0x%x",
             __func__, stream_type, streamInfo->pp_config.feature_mask);
 
@@ -8456,9 +8461,8 @@ bool QCamera2HardwareInterface::needReprocess()
     bool needReprocess = false;
     pthread_mutex_lock(&m_parm_lock);
 
-    if ((!mParameters.isJpegPictureFormat() &&
-        !mParameters.isNV21PictureFormat()) ||
-        (getSensorType() == CAM_SENSOR_Y)) {
+    if (!mParameters.isJpegPictureFormat() &&
+        !mParameters.isNV21PictureFormat()) {
         // RAW image, no need to reprocess
         pthread_mutex_unlock(&m_parm_lock);
         return false;
