@@ -1854,9 +1854,6 @@ int32_t QCameraParameters::setPreviewFormat(const QCameraParameters& params)
             mPreviewFormat = (cam_format_t)previewFormat;
             mAppPreviewFormat = (cam_format_t)previewFormat;
         }
-        if (m_pCapability->sensor_type.sens_type == CAM_SENSOR_Y) {
-            mPreviewFormat = CAM_FORMAT_Y_ONLY;
-        }
         CameraParameters::setPreviewFormat(str);
         CDBG_HIGH("%s: format %d\n", __func__, mPreviewFormat);
         return NO_ERROR;
@@ -4082,8 +4079,7 @@ int32_t QCameraParameters::setNoDisplayMode(const QCameraParameters& params)
     CDBG("%s: str_val: %s, prev_str: %s", __func__, str_val, prev_str);
 
     // Aux Camera Mode, set no display mode
-    if ((m_relCamSyncInfo.mode == CAM_MODE_SECONDARY)||
-       (m_pCapability->sensor_type.sens_type == CAM_SENSOR_Y)) {
+    if (m_relCamSyncInfo.mode == CAM_MODE_SECONDARY) {
         if (!m_bNoDisplayMode) {
             set(KEY_QC_NO_DISPLAY_MODE, 1);
             m_bNoDisplayMode = true;
@@ -12228,6 +12224,10 @@ bool QCameraParameters::setStreamConfigure(bool isCapture,
                 mStreamPpMask[CAM_STREAM_TYPE_PREVIEW];
         getStreamFormat(CAM_STREAM_TYPE_PREVIEW,
                 stream_config_info.format[stream_config_info.num_streams]);
+        if (m_pCapability->sensor_type.sens_type == CAM_SENSOR_Y) {
+            // For Mono camera, update stream info format to backend as Y ONLY.
+            stream_config_info.format[stream_config_info.num_streams] = CAM_FORMAT_Y_ONLY;
+        }
         stream_config_info.num_streams++;
         if (m_pCapability->sensor_type.sens_type != CAM_SENSOR_Y) {
             stream_config_info.type[stream_config_info.num_streams] =
@@ -12815,10 +12815,6 @@ int32_t QCameraParameters::updatePpFeatureMask(cam_stream_type_t stream_type) {
     if (stream_type >= CAM_STREAM_TYPE_MAX) {
         ALOGE("%s: Error!! stream type: %d not valid", __func__, stream_type);
         return -1;
-    }
-    if (m_pCapability->sensor_type.sens_type == CAM_SENSOR_Y) {
-       setStreamPpMask(stream_type, feature_mask);
-       return NO_ERROR;
     }
     // Update feature mask for SeeMore in video and video preview
     if (isSeeMoreEnabled() && ((stream_type == CAM_STREAM_TYPE_VIDEO) ||
