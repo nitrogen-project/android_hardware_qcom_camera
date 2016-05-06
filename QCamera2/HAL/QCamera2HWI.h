@@ -411,6 +411,7 @@ private:
     cam_sensor_t getSensorType();
     inline bool isMonoCamera() { return (getSensorType() == CAM_SENSOR_Y);};
     bool isLowPowerMode();
+    nsecs_t getBootToMonoTimeOffset();
 
     int32_t processAutoFocusEvent(cam_auto_focus_data_t &focus_data);
     int32_t processZoomEvent(cam_crop_data_t &crop_info);
@@ -771,6 +772,9 @@ private:
     //Gralloc memory details
     pthread_mutex_t mGrallocLock;
     uint8_t mEnqueuedBuffers;
+
+    //The offset between BOOTTIME and MONOTONIC timestamps
+    nsecs_t mBootToMonoTimestampOffset;
 };
 
 }; // namespace qcamera
