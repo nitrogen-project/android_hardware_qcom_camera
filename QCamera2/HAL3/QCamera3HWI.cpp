@@ -96,9 +96,9 @@ volatile uint32_t gCamHal3LogLevel = 0;
 extern uint8_t gNumCameraSessions;
 
 const QCamera3HardwareInterface::QCameraPropMap QCamera3HardwareInterface::CDS_MAP [] = {
-    {"On",  CAM_CDS_MODE_ON},
-    {"Off", CAM_CDS_MODE_OFF},
-    {"Auto",CAM_CDS_MODE_AUTO}
+    {"on",  CAM_CDS_MODE_ON},
+    {"off", CAM_CDS_MODE_OFF},
+    {"auto",CAM_CDS_MODE_AUTO}
 };
 
 const QCamera3HardwareInterface::QCameraMap<
@@ -3970,7 +3970,7 @@ QCamera3HardwareInterface::translateFromHalMetadata(
     IF_META_AVAILABLE(cam_color_correct_gains_t, colorCorrectionGains,
             CAM_INTF_META_COLOR_CORRECT_GAINS, metadata) {
         camMetadata.update(ANDROID_COLOR_CORRECTION_GAINS, colorCorrectionGains->gains,
-                CC_GAINS_COUNT);
+                CC_GAIN_MAX);
     }
 
     IF_META_AVAILABLE(cam_color_correct_matrix_t, colorCorrectionMatrix,
@@ -6780,11 +6780,11 @@ camera_metadata_t* QCamera3HardwareInterface::translateCapabilityToMetadata(int 
     /* CDS default */
     char prop[PROPERTY_VALUE_MAX];
     memset(prop, 0, sizeof(prop));
-    property_get("persist.camera.CDS", prop, "Auto");
-    cam_cds_mode_type_t cds_mode = CAM_CDS_MODE_AUTO;
+    property_get("persist.camera.CDS", prop, "off");
+    cam_cds_mode_type_t cds_mode = CAM_CDS_MODE_OFF;
     cds_mode = lookupProp(CDS_MAP, METADATA_MAP_SIZE(CDS_MAP), prop);
     if (CAM_CDS_MODE_MAX == cds_mode) {
-        cds_mode = CAM_CDS_MODE_AUTO;
+        cds_mode = CAM_CDS_MODE_OFF;
     }
     //@note: force cds mode to be OFF when TNR is enabled.
     if (m_bTnrEnabled == true) {
@@ -7241,7 +7241,7 @@ int QCamera3HardwareInterface::translateToHalMetadata
 
     if (frame_settings.exists(ANDROID_COLOR_CORRECTION_GAINS)) {
         cam_color_correct_gains_t colorCorrectGains;
-        for (size_t i = 0; i < CC_GAINS_COUNT; i++) {
+        for (size_t i = 0; i < CC_GAIN_MAX; i++) {
             colorCorrectGains.gains[i] =
                     frame_settings.find(ANDROID_COLOR_CORRECTION_GAINS).data.f[i];
         }
