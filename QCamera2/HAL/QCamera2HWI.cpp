@@ -749,16 +749,6 @@ void QCamera2HardwareInterface::release_recording_frame(
         return;
     }
     CDBG("%s: E camera id %d", __func__, hw->getCameraId());
-    //Close and delete duplicated native handle and FD's
-    if ((hw->mVideoMem != NULL) && (hw->mStoreMetaDataInFrame)) {
-         ret = hw->mVideoMem->closeNativeHandle(opaque, TRUE);
-        if (ret != NO_ERROR) {
-            ALOGE("Invalid video metadata");
-            return;
-        }
-    } else {
-        ALOGE("Possible FD leak. Release recording called after stop");
-    }
 
     hw->lockAPI();
     qcamera_api_result_t apiResult;
@@ -1626,8 +1616,7 @@ QCamera2HardwareInterface::QCamera2HardwareInterface(uint32_t cameraId)
       mJpegClientHandle(0),
       mJpegHandleOwner(false),
       mCACDoneReceived(false),
-      mMetadataMem(NULL),
-      mVideoMem(NULL)
+      mMetadataMem(NULL)
 {
 #ifdef TARGET_TS_MAKEUP
     memset(&mFaceRect, -1, sizeof(mFaceRect));
@@ -2710,10 +2699,6 @@ QCameraMemory *QCamera2HardwareInterface::allocateStreamBuf(
             }
             videoMemory->setVideoInfo(usage, fmt);
             mem = videoMemory;
-            if (!mParameters.getBufBatchCount()) {
-                //For batch mode this will be part of user buffer.
-                mVideoMem = videoMemory;
-            }
         }
         break;
     case CAM_STREAM_TYPE_CALLBACK:
@@ -3444,7 +3429,6 @@ int QCamera2HardwareInterface::startRecording()
 {
     int32_t rc = NO_ERROR;
     CDBG_HIGH("%s: E", __func__);
-    mVideoMem = NULL;
 
     //link meta stream with video channel if low power mode.
     if (isLowPowerMode()) {
@@ -3508,7 +3492,10 @@ int QCamera2HardwareInterface::stopRecording()
     CDBG_HIGH("%s: E", __func__);
     int rc = stopChannel(QCAMERA_CH_TYPE_VIDEO);
 
+#ifdef USE_MEDIA_EXTENSIONS
     m_cbNotifier.flushVideoNotifications();
+#endif
+
 #ifdef HAS_MULTIMEDIA_HINTS
     if (m_pPowerModule) {
         if (m_pPowerModule->powerHint) {
@@ -3516,7 +3503,6 @@ int QCamera2HardwareInterface::stopRecording()
         }
     }
 #endif
-    mVideoMem = NULL;
     CDBG_HIGH("%s: X", __func__);
     return rc;
 }
