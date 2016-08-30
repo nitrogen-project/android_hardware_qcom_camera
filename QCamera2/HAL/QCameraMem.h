@@ -33,8 +33,12 @@
 #include <hardware/camera.h>
 #include <utils/Mutex.h>
 #include <utils/List.h>
-#include <qdMetaData.h>
 #include <utils/Timers.h>
+
+//Media depedancies
+#include "OMX_QCOMExtns.h"
+//Display dependencies
+#include <qdMetaData.h>
 
 extern "C" {
 #include <sys/types.h>
@@ -46,7 +50,12 @@ extern "C" {
 #define VIDEO_METADATA_NUM_INTS 5
 
 #ifdef USE_MEDIA_EXTENSIONS
+//Note that this macro might have already been
+//defined in OMX_QCOMExtns.h, in which case
+//the local value below will not be used.
+#ifndef VIDEO_METADATA_NUM_COMMON_INTS
 #define VIDEO_METADATA_NUM_COMMON_INTS   1
+#endif
 #endif
 
 namespace qcamera {
