@@ -1,6 +1,6 @@
 /*
 ** Copyright 2008, The Android Open Source Project
-** Copyright (c) 2012-2015, The Linux Foundation. All rights reserved.
+** Copyright (c) 2012-2016, The Linux Foundation. All rights reserved.
 ** Not a Contribution. Apache license notifications and license are
 ** retained for attribution purposes only.
 **
@@ -826,6 +826,7 @@ public:
     int32_t bundleRelatedCameras(bool sync, uint32_t sessionid);
     int32_t setInstantAEC(uint8_t enable, bool initCommit);
     bool isFDInVideoEnabled();
+    int32_t checkFeatureConcurrency();
 private:
     int32_t setPreviewSize(const QCameraParameters& );
     int32_t setVideoSize(const QCameraParameters& );
