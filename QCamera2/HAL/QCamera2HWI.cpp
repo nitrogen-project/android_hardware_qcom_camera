@@ -1798,6 +1798,9 @@ int QCamera2HardwareInterface::openCamera()
 {
     size_t i;
     int32_t rc = NO_ERROR;
+    DeferWorkArgs args;
+    DeferMetadataAllocArgs metadataAllocArgs;
+    uint32_t padding;
     char value[PROPERTY_VALUE_MAX];
 
     if (mCameraHandle) {
@@ -1805,58 +1808,40 @@ int QCamera2HardwareInterface::openCamera()
         return ALREADY_EXISTS;
     }
 
+    rc = camera_open((uint8_t)mCameraId, &mCameraHandle);
+    if (rc) {
+        ALOGE("camera_open failed. rc = %d, mCameraHandle = %p", rc, mCameraHandle);
+        return rc;
+    }
+
+    if(NO_ERROR != initCapabilities(mCameraId,mCameraHandle)) {
+        ALOGE("initCapabilities failed.");
+        rc = UNKNOWN_ERROR;
+        goto error_exit;
+    }
+
+    mCameraHandle->ops->register_event_notify(mCameraHandle->camera_handle,
+            camEvtHandle,
+            (void *) this);
+
     // alloc param buffer
-    DeferWorkArgs args;
     memset(&args, 0, sizeof(args));
     mParamAllocJob = queueDeferredWork(CMD_DEF_PARAM_ALLOC, args);
 
-    if (gCamCapability[mCameraId] != NULL) {
-        // allocate metadata buffers
-        DeferWorkArgs args;
-        DeferMetadataAllocArgs metadataAllocArgs;
+    // allocate metadata buffers
+    memset(&args, 0, sizeof(args));
+    memset(&metadataAllocArgs, 0, sizeof(metadataAllocArgs));
 
-        memset(&args, 0, sizeof(args));
-        memset(&metadataAllocArgs, 0, sizeof(metadataAllocArgs));
+    padding =
+            gCamCapability[mCameraId]->padding_info.plane_padding;
+    metadataAllocArgs.size = PAD_TO_SIZE(sizeof(metadata_buffer_t),
+            padding);
+    metadataAllocArgs.bufferCnt = CAMERA_MIN_METADATA_BUFFERS;
+    args.metadataAllocArgs = metadataAllocArgs;
 
-        uint32_t padding =
-                gCamCapability[mCameraId]->padding_info.plane_padding;
-        metadataAllocArgs.size = PAD_TO_SIZE(sizeof(metadata_buffer_t),
-                padding);
-        metadataAllocArgs.bufferCnt = CAMERA_MIN_METADATA_BUFFERS;
-        args.metadataAllocArgs = metadataAllocArgs;
-
-        mMetadataAllocJob = queueDeferredWork(CMD_DEF_METADATA_ALLOC, args);
-        if (mMetadataAllocJob == 0) {
-            CDBG_HIGH("%s: Failed to allocate param buffer", __func__);
-        }
-
-        rc = camera_open((uint8_t)mCameraId, &mCameraHandle);
-        if (rc) {
-            ALOGE("camera_open failed. rc = %d, mCameraHandle = %p", rc, mCameraHandle);
-            return rc;
-        }
-
-        mCameraHandle->ops->register_event_notify(mCameraHandle->camera_handle,
-                camEvtHandle,
-                (void *) this);
-    } else {
-        CDBG_HIGH("%s: Capabilities are not initialized. Initializing them now.", __func__);
-
-        rc = camera_open((uint8_t)mCameraId, &mCameraHandle);
-        if (rc) {
-            ALOGE("camera_open failed. rc = %d, mCameraHandle = %p", rc, mCameraHandle);
-            return rc;
-        }
-
-        if(NO_ERROR != initCapabilities(mCameraId,mCameraHandle)) {
-            ALOGE("initCapabilities failed.");
-            rc = UNKNOWN_ERROR;
-            goto error_exit;
-        }
-
-        mCameraHandle->ops->register_event_notify(mCameraHandle->camera_handle,
-                camEvtHandle,
-                (void *) this);
+    mMetadataAllocJob = queueDeferredWork(CMD_DEF_METADATA_ALLOC, args);
+    if (mMetadataAllocJob == 0) {
+        CDBG_HIGH("%s: Failed to allocate param buffer", __func__);
     }
 
     // Init params in the background
