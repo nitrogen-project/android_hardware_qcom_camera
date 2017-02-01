@@ -2210,6 +2210,7 @@ int QCamera2HardwareInterface::initCapabilities(uint32_t cameraId,
     ATRACE_CALL();
     int rc = NO_ERROR;
     QCameraHeapMemory *capabilityHeap = NULL;
+    cam_capability_t *capability;
 
     /* Allocate memory for capability buffer */
     capabilityHeap = new QCameraHeapMemory(QCAMERA_ION_USE_CACHE);
@@ -2218,9 +2219,10 @@ int QCamera2HardwareInterface::initCapabilities(uint32_t cameraId,
         ALOGE("%s: No memory for cappability", __func__);
         goto allocate_failed;
     }
+    capability = (cam_capability_t *)DATA_PTR(capabilityHeap,0);
 
     /* Map memory for capability buffer */
-    memset(DATA_PTR(capabilityHeap,0), 0, sizeof(cam_capability_t));
+    memset(capability, 0, sizeof(cam_capability_t));
 
     cam_buf_map_type_list bufMapList;
     rc = QCameraBufferMaps::makeSingletonBufMapList(
@@ -2245,15 +2247,23 @@ int QCamera2HardwareInterface::initCapabilities(uint32_t cameraId,
         ALOGE("%s: failed to query capability",__func__);
         goto query_failed;
     }
-    gCamCapability[cameraId] =
-            (cam_capability_t *)malloc(sizeof(cam_capability_t));
-
-    if (!gCamCapability[cameraId]) {
-        ALOGE("%s: out of memory", __func__);
+    if (capability->preview_sizes_tbl_cnt <= 0 ||
+        capability->video_sizes_tbl_cnt <= 0 ||
+        capability->picture_sizes_tbl_cnt <= 0) {
+        ALOGE("%s: bad capability",__func__);
+        rc = UNKNOWN_ERROR;
         goto query_failed;
     }
-    memcpy(gCamCapability[cameraId], DATA_PTR(capabilityHeap,0),
-                                        sizeof(cam_capability_t));
+
+    if (!gCamCapability[cameraId]) {
+        gCamCapability[cameraId] =
+                (cam_capability_t *)malloc(sizeof(cam_capability_t));
+        if (!gCamCapability[cameraId]) {
+            ALOGE("%s: out of memory", __func__);
+            goto query_failed;
+        }
+    }
+    memcpy(gCamCapability[cameraId], capability, sizeof(cam_capability_t));
 
     rc = NO_ERROR;
 
