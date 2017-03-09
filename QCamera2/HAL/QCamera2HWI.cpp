@@ -8038,13 +8038,13 @@ int32_t QCamera2HardwareInterface::processFaceDetectionResult(cam_face_detection
             faces[i].mouth[1] =
                 MAP_TO_DRIVER_COORDINATE(fd_data->faces[i].mouth_center.y, display_dim.height, 2000, -1000);
 
-#ifndef VANILLA_HAL
 #ifdef TARGET_TS_MAKEUP
             mFaceRect.left = fd_data->faces[i].face_boundary.left;
             mFaceRect.top = fd_data->faces[i].face_boundary.top;
             mFaceRect.right = fd_data->faces[i].face_boundary.width+mFaceRect.left;
             mFaceRect.bottom = fd_data->faces[i].face_boundary.height+mFaceRect.top;
 #endif
+#ifndef VANILLA_HAL
             faces[i].smile_degree = fd_data->faces[i].smile_degree;
             faces[i].smile_score = fd_data->faces[i].smile_confidence;
             faces[i].blink_detected = fd_data->faces[i].blink_detected;
