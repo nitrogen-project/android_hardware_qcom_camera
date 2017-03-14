@@ -6437,13 +6437,7 @@ int QCamera3HardwareInterface::getCamInfo(uint32_t cameraId,
 
     pthread_mutex_lock(&gCamLock);
     if (NULL == gCamCapability[cameraId]) {
-        int retry = 10;
-        do {
-            rc = initCapabilities(cameraId);
-            if (rc == NO_ERROR)
-                break;
-            usleep(100 * 1000U);
-        } while (--retry);
+        rc = initCapabilities(cameraId);
         if (rc < 0) {
             pthread_mutex_unlock(&gCamLock);
             return rc;
