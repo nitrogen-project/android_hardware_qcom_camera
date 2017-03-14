@@ -203,7 +203,6 @@ public:
 
 private:
 
-    static int getCapabilities(int32_t cameraId, mm_camera_vtbl_t *cameraHandle);
     int openCamera();
     int closeCamera();
     static size_t calcMaxJpegSize(uint32_t camera_id);
