@@ -566,13 +566,7 @@ int QCamera3HardwareInterface::openCamera(struct hw_device_t **hw_device)
     ALOGI("[KPI Perf] %s: E PROFILE_OPEN_CAMERA camera id %d",
             __func__, mCameraId);
 
-    int retry = 10;
-    do {
-        rc = openCamera();
-        if (rc == NO_ERROR)
-            break;
-        usleep(100 * 1000U);
-    } while (--retry);
+    rc = openCamera();
     if (rc == 0) {
         *hw_device = &mCameraDevice.common;
     } else
