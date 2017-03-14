@@ -609,12 +609,6 @@ int QCamera3HardwareInterface::openCamera()
         return -ENODEV;
     }
 
-    rc = getCapabilities(mCameraId, mCameraHandle);
-    if (rc) {
-        ALOGE("initCapabilities failed.");
-        goto error_exit;
-    }
-
     mCameraOpened = true;
 
     rc = mCameraHandle->ops->register_event_notify(mCameraHandle->camera_handle,
@@ -670,11 +664,6 @@ int QCamera3HardwareInterface::openCamera()
     CDBG_HIGH("mBootToMonoTimestampOffset = %lld", mBootToMonoTimestampOffset);
 
     return NO_ERROR;
-
-error_exit:
-    mCameraHandle->ops->close_camera(mCameraHandle->camera_handle);
-    mCameraHandle = NULL;
-    return rc;
 }
 
 /*===========================================================================
