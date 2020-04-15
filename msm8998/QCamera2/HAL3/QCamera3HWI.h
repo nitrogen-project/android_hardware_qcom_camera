@@ -128,8 +128,7 @@ typedef struct {
     nsecs_t timestamp;
     nsecs_t av_timestamp;
     List<PendingBufferInfo> mPendingBufferList;
-    std::shared_ptr<mm_camera_buf_def_t> mHdrplusInputBuf;
-    std::shared_ptr<mm_camera_buf_def_t> mHdrplusInputMetaBuf;
+    bool hdrplus;
 } PendingBuffersInRequest;
 
 class PendingBuffersMap {
